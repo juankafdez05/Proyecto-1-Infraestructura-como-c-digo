@@ -5,7 +5,7 @@ variable "libvirt_uri" {
 }
 
 variable "pool" {
-  description = "Pool de almacenamiento donde están la imagen base y los discos"
+  description = "Pool de almacenamiento donde están las imágenes base y los discos"
   type        = string
   default     = "default"
 }
@@ -17,10 +17,11 @@ variable "imagen_base_deb" {
 }
 
 variable "imagen_base_ubu" {
-  description = "Nombre del volumen Debian 13 ya existente en el pool (se clona)"
+  description = "Nombre del volumen Ubuntu ya existente en el pool (se clona)"
   type        = string
   default     = "ubuntu"
 }
+
 variable "memoria_mb" {
   description = "Memoria RAM de cada máquina, en MB"
   type        = number
@@ -66,20 +67,23 @@ variable "red_datos_prefijo" {
 variable "maquinas" {
   description = "Máquinas del escenario. Añadir o quitar una entrada añade o quita la VM"
   type = map(object({
-    grupo     = string   # grupo del inventario de Ansible
-    ip_datos  = string   # IP estática en la red de datos
-    mac_nat   = string   # MAC fija de la interfaz NAT
-    mac_datos = string   # MAC fija de la interfaz de datos
+    grupo     = string # grupo del inventario de Ansible
+    imagen    = string # "debian" o "ubuntu": decide qué imagen base se clona
+    ip_datos  = string # IP estática en la red de datos
+    mac_nat   = string # MAC fija de la interfaz NAT
+    mac_datos = string # MAC fija de la interfaz de datos
   }))
   default = {
     web = {
       grupo     = "servidores_web"
+      imagen    = "debian"
       ip_datos  = "10.10.10.11"
       mac_nat   = "52:54:00:aa:00:01"
       mac_datos = "52:54:00:bb:00:01"
     }
     bd = {
       grupo     = "servidores_bd"
+      imagen    = "ubuntu"
       ip_datos  = "10.10.10.12"
       mac_nat   = "52:54:00:aa:00:02"
       mac_datos = "52:54:00:bb:00:02"
