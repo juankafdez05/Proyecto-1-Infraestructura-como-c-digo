@@ -1,0 +1,17 @@
+# Estado de OpenTofu (puede contener datos sensibles)
+*.tfstate
+*.tfstate.*
+.terraform/
+crash.log
+
+# Variables con valores propios (se sube solo el .example)
+*.tfvars
+!terraform.tfvars.example
+
+# Inventario generado por OpenTofu (nunca se escribe a mano)
+ansible/inventario
+
+# Discos e imágenes
+*.qcow2
+*.img
+*.iso
