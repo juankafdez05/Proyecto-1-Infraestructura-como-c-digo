@@ -1,0 +1,5 @@
+# Copia este fichero a terraform.tfvars y ajusta los valores a tu equipo
+# clave_publica_ssh = "~/.ssh/id_ed25519.pub"
+# imagen_base_deb   = "debian13-base.qcow2"
+# imagen_base_ubu   = "ubuntu2604-base.qcow2"
+# red_nat_cidr      = "192.168.150.0/24"
