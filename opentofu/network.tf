@@ -14,5 +14,5 @@ resource "libvirt_network" "nat" {
 
 resource "libvirt_network" "datos" {
   name = "${var.prefijo}-red-datos"
-  mode = "none"   
+  mode = "none"
 }
