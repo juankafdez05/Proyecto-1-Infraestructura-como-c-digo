@@ -8,3 +8,8 @@
   hosts: servidores_bd
   roles:
     - bd
+
+- name: Servidor web
+  hosts: servidores_web
+  roles:
+    - web

@@ -1,0 +1,14 @@
+# Gestionado por Ansible
+<VirtualHost *:80>
+    ServerName {{ web_servername }}
+    DocumentRoot {{ web_docroot }}
+
+    <Directory {{ web_docroot }}>
+        Options -Indexes +FollowSymLinks
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/guestbook-error.log
+    CustomLog ${APACHE_LOG_DIR}/guestbook-access.log combined
+</VirtualHost>

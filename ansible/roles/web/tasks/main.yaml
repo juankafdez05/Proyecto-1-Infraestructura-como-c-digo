@@ -1,0 +1,46 @@
+---
+- name: Instalar Apache, PHP con soporte MariaDB y el cliente de MariaDB
+  ansible.builtin.apt:
+    name:
+      - apache2
+      - php
+      - libapache2-mod-php
+      - php-mysql
+      - mariadb-client
+    state: present
+    lock_timeout: 120
+
+- name: Crear el directorio de la aplicación
+  ansible.builtin.file:
+    path: "{{ web_docroot }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: "0755"
+
+- name: Crear el virtual host
+  ansible.builtin.template:
+    src: guestbook.conf.j2
+    dest: /etc/apache2/sites-available/guestbook.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recargar Apache
+
+- name: Activar el virtual host
+  ansible.builtin.command: a2ensite guestbook.conf
+  args:
+    creates: /etc/apache2/sites-enabled/guestbook.conf
+  notify: Recargar Apache
+
+- name: Desactivar el sitio por defecto de Apache
+  ansible.builtin.command: a2dissite 000-default.conf
+  args:
+    removes: /etc/apache2/sites-enabled/000-default.conf
+  notify: Recargar Apache
+
+- name: Asegurar que Apache está activo y arranca con el sistema
+  ansible.builtin.service:
+    name: apache2
+    state: started
+    enabled: true
