@@ -1,0 +1,17 @@
+---
+- name: Actualizar el índice de paquetes
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+    lock_timeout: 120
+
+- name: Actualizar el sistema
+  ansible.builtin.apt:
+    upgrade: dist
+    lock_timeout: 120
+
+- name: Instalar los paquetes comunes
+  ansible.builtin.apt:
+    name: "{{ paquetes_comunes }}"
+    state: present
+    lock_timeout: 120
