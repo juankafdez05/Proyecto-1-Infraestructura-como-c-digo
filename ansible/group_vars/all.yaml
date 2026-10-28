@@ -6,3 +6,12 @@ paquetes_comunes:
   - ca-certificates
   - net-tools
   - htop
+
+# IP de cada máquina en la red de datos (las genera OpenTofu en el inventario)
+ip_web_datos: "{{ hostvars['web'].ip_datos }}"
+ip_bd_datos: "{{ hostvars['bd'].ip_datos }}"
+
+# Base de datos de la aplicación
+bd_nombre: guestbook
+bd_usuario: guestbook
+bd_password: "CambiaEstaClave_2026"
