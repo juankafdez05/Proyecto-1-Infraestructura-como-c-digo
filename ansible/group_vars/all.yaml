@@ -1,0 +1,8 @@
+---
+# Paquetes comunes que se instalan en todas las máquinas
+paquetes_comunes:
+  - vim
+  - curl
+  - ca-certificates
+  - net-tools
+  - htop
