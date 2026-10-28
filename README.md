@@ -13,19 +13,25 @@ Escenario con OpenTofu (libvirt) y configuración con Ansible.
 - `p1-red-datos`: red aislada, solo comunica `web` y `bd`.
 
 ## Requisitos
+
 - OpenTofu >= 1.6 y libvirt/QEMU (usuario en el grupo `libvirt`)
 - Imágenes cloud base de Debian 13 y Ubuntu en el pool `default`
-- Una clave SSH pública
+- Ansible y una clave SSH pública
 
 ## Despliegue
+
 ```bash
 cd opentofu
 cp terraform.tfvars.example terraform.tfvars   # ajusta imágenes, red y clave
 tofu init
 tofu apply
+cd ../ansible
+ansible-playbook site.yaml
 ```
-Genera `ansible/inventario` automáticamente.
+
+`tofu apply` genera `ansible/inventario` automáticamente.
 
 ## Estructura
+
 - `opentofu/`: redes, discos, cloud-init, máquinas, output e inventario
-- `ansible/`: configuración (pendiente)
+- `ansible/`: configuración (roles `commons`, `bd` y `web`)
