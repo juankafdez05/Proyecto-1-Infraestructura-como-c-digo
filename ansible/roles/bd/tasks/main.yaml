@@ -1,0 +1,42 @@
+---
+- name: Instalar MariaDB y el conector Python que usa Ansible
+  ansible.builtin.apt:
+    name:
+      - mariadb-server
+      - python3-pymysql
+    state: present
+    lock_timeout: 120
+
+- name: Configurar MariaDB para escuchar solo en la red de datos
+  ansible.builtin.template:
+    src: red-datos.cnf.j2
+    dest: /etc/mysql/mariadb.conf.d/99-red-datos.cnf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reiniciar MariaDB
+
+- name: Asegurar que MariaDB está activo y arranca con el sistema
+  ansible.builtin.service:
+    name: mariadb
+    state: started
+    enabled: true
+
+- name: Aplicar ahora los cambios pendientes de configuración
+  ansible.builtin.meta: flush_handlers
+
+- name: Crear la base de datos de la aplicación
+  community.mysql.mysql_db:
+    name: "{{ bd_nombre }}"
+    state: present
+    login_unix_socket: /run/mysqld/mysqld.sock
+
+- name: Crear el usuario, que solo puede conectarse desde el servidor web
+  community.mysql.mysql_user:
+    name: "{{ bd_usuario }}"
+    host: "{{ ip_web_datos }}"
+    password: "{{ bd_password }}"
+    priv: "{{ bd_nombre }}.*:ALL"
+    update_password: on_create
+    state: present
+    login_unix_socket: /run/mysqld/mysqld.sock
