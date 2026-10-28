@@ -1,0 +1,9 @@
+%{ for grupo, hosts in grupos ~}
+[${grupo}]
+%{ for h in hosts ~}
+${h} ansible_host=${ips_nat[h]} ip_datos=${maquinas[h].ip_datos}
+%{ endfor ~}
+
+%{ endfor ~}
+[all:vars]
+ansible_user=${usuario}
