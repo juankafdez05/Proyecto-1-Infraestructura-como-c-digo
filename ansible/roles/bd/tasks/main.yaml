@@ -41,3 +41,32 @@
     update_password: on_create
     state: present
     login_unix_socket: /run/mysqld/mysqld.sock
+
+- name: Comprobar si la tabla messages ya existe
+  community.mysql.mysql_query:
+    login_db: "{{ bd_nombre }}"
+    query: >-
+      SELECT COUNT(*) AS n FROM information_schema.tables
+      WHERE table_schema = %s AND table_name = 'messages'
+    positional_args:
+      - "{{ bd_nombre }}"
+    login_unix_socket: /run/mysqld/mysqld.sock
+  register: tabla_messages
+  changed_when: false
+
+- name: Copiar el schema.sql de la aplicación (solo si falta la tabla)
+  ansible.builtin.copy:
+    src: schema.sql
+    dest: /var/tmp/schema-guestbook.sql
+    owner: root
+    group: root
+    mode: "0600"
+  when: tabla_messages.query_result[0][0].n | int == 0
+
+- name: Importar el schema.sql (solo si falta la tabla)
+  community.mysql.mysql_db:
+    name: "{{ bd_nombre }}"
+    state: import
+    target: /var/tmp/schema-guestbook.sql
+    login_unix_socket: /run/mysqld/mysqld.sock
+  when: tabla_messages.query_result[0][0].n | int == 0
