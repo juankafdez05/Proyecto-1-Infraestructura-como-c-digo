@@ -1,3 +1,5 @@
 ---
 web_servername: www.juanka.org
 web_docroot: /var/www/guestbook
+app_repo: https://github.com/josedom24/guestbook_php.git
+app_version: main

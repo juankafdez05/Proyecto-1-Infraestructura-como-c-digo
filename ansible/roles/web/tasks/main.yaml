@@ -1,22 +1,45 @@
 ---
-- name: Instalar Apache, PHP con soporte MariaDB y el cliente de MariaDB
+- name: Instalar Apache, PHP con sus extensiones, git y el cliente de MariaDB
   ansible.builtin.apt:
     name:
       - apache2
       - php
       - libapache2-mod-php
       - php-mysql
+      - php-mbstring
+      - git
       - mariadb-client
     state: present
     lock_timeout: 120
+
+- name: Activar el módulo rewrite de Apache (lo usa el .htaccess)
+  ansible.builtin.command: a2enmod rewrite
+  args:
+    creates: /etc/apache2/mods-enabled/rewrite.load
+  notify: Reiniciar Apache
 
 - name: Crear el directorio de la aplicación
   ansible.builtin.file:
     path: "{{ web_docroot }}"
     state: directory
-    owner: www-data
-    group: www-data
+    owner: root
+    group: root
     mode: "0755"
+
+- name: Descargar la aplicación guestbook_php
+  ansible.builtin.git:
+    repo: "{{ app_repo }}"
+    dest: "{{ web_docroot }}"
+    version: "{{ app_version }}"
+    update: false
+
+- name: Generar config.php con los datos de conexión a la base de datos
+  ansible.builtin.template:
+    src: config.php.j2
+    dest: "{{ web_docroot }}/config.php"
+    owner: root
+    group: www-data
+    mode: "0640"
 
 - name: Crear el virtual host
   ansible.builtin.template:

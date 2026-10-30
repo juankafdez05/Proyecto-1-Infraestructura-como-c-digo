@@ -5,9 +5,12 @@
 
     <Directory {{ web_docroot }}>
         Options -Indexes +FollowSymLinks
-        AllowOverride None
+        AllowOverride All
         Require all granted
     </Directory>
+
+    # No servir el repositorio git de la aplicación
+    RedirectMatch 404 /\.git
 
     ErrorLog ${APACHE_LOG_DIR}/guestbook-error.log
     CustomLog ${APACHE_LOG_DIR}/guestbook-access.log combined
