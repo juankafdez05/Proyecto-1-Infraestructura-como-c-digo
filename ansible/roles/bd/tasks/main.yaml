@@ -37,6 +37,7 @@
     host: "{{ ip_web_datos }}"
     password: "{{ bd_password }}"
     priv: "{{ bd_nombre }}.*:ALL"
+    column_case_sensitive: true
     update_password: on_create
     state: present
     login_unix_socket: /run/mysqld/mysqld.sock
