@@ -3,6 +3,8 @@
 Escenario con **OpenTofu** (libvirt/KVM) configurado con **Ansible** para poner en
 producción un libro de visitas en PHP con MariaDB (`guestbook_php`).
 
+Repositorio: https://github.com/juankafdez05/Proyecto-1-Infraestructura-como-c-digo
+
 ## Escenario
 
 ```
@@ -13,6 +15,7 @@ producción un libro de visitas en PHP con MariaDB (`guestbook_php`).
         +-----------+             +-----------+
         |    web    |             |    bd     |
         | Debian 13 |             |  Ubuntu   |
+        |           |             |   26.04   |
         | Apache+PHP|             |  MariaDB  |
         +-----------+             +-----------+
               |                         |
@@ -23,7 +26,7 @@ producción un libro de visitas en PHP con MariaDB (`guestbook_php`).
 | Máquina | SO | Red NAT (DHCP) | Red de datos (estática) |
 |---|---|---|---|
 | web | Debian 13 | 192.168.150.0/24 | 10.10.10.11/24 |
-| bd | Ubuntu | 192.168.150.0/24 | 10.10.10.12/24 |
+| bd | Ubuntu 26.04 | 192.168.150.0/24 | 10.10.10.12/24 |
 
 - `p1-red-nat`: acceso desde el equipo anfitrión y salida a internet.
 - `p1-red-datos`: red aislada, solo comunica `web` y `bd`.
@@ -32,15 +35,15 @@ producción un libro de visitas en PHP con MariaDB (`guestbook_php`).
 ## Requisitos
 
 - OpenTofu >= 1.6 y libvirt/QEMU (usuario en el grupo `libvirt`)
-- Imágenes cloud base de Debian 13 y Ubuntu en el pool `default`
+- Imágenes cloud base de Debian 13 y Ubuntu 26.04 en el pool `default`
 - Ansible y la colección `community.mysql`
-- Una clave SSH pública (`~/.ssh/id_ed25519.pub` por defecto)
+- Una clave SSH pública (`~/.ssh/id_rsa.pub` por defecto)
 
 ## Despliegue
 
 ```bash
 cd opentofu
-cp terraform.tfvars.example terraform.tfvars   # ajusta imágenes, red y clave
+# Opcional: cp terraform.tfvars.example terraform.tfvars para cambiar los valores por defecto
 tofu init
 tofu apply
 

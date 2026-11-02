@@ -13,13 +13,13 @@ variable "pool" {
 variable "imagen_base_deb" {
   description = "Nombre del volumen Debian 13 ya existente en el pool (se clona)"
   type        = string
-  default     = "debian13"
+  default     = "debian13-base.qcow2"
 }
 
 variable "imagen_base_ubu" {
   description = "Nombre del volumen Ubuntu ya existente en el pool (se clona)"
   type        = string
-  default     = "ubuntu"
+  default     = "ubuntu2604-base.qcow2"
 }
 
 variable "memoria_mb" {
@@ -49,13 +49,13 @@ variable "usuario" {
 variable "clave_publica_ssh" {
   description = "Ruta a la clave pública SSH que se autoriza en las máquinas"
   type        = string
-  default     = "~/.ssh/id_ed25519.pub"
+  default     = "~/.ssh/id_rsa.pub"
 }
 
 variable "red_nat_cidr" {
   description = "Rango de la red NAT con DHCP"
   type        = string
-  default     = "192.168.100.0/24"
+  default     = "192.168.150.0/24"
 }
 
 variable "red_datos_prefijo" {
