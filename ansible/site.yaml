@@ -1,4 +1,19 @@
 ---
+- name: Esperar a que las máquinas estén accesibles
+  hosts: all
+  gather_facts: false
+  become: false
+  tasks:
+    - name: Esperar a que SSH responda
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+
+    - name: Esperar a que cloud-init termine
+      ansible.builtin.command: cloud-init status --wait
+      register: cloud_init
+      changed_when: false
+      failed_when: cloud_init.rc not in [0, 2]
+
 - name: Configuración común a todas las máquinas
   hosts: all
   roles:
