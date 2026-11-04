@@ -3,3 +3,6 @@
 # imagen_base_deb   = "debian13-base.qcow2"
 # imagen_base_ubu   = "ubuntu2604-base.qcow2"
 # red_nat_cidr      = "192.168.150.0/24"
+# zona_horaria      = "Europe/Madrid"
+# idioma            = "es_ES.UTF-8"
+# paquetes          = ["qemu-guest-agent"]

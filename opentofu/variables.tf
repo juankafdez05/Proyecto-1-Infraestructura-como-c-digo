@@ -52,6 +52,24 @@ variable "clave_publica_ssh" {
   default     = "~/.ssh/id_rsa.pub"
 }
 
+variable "zona_horaria" {
+  description = "Zona horaria de las máquinas (cloud-init: timezone)"
+  type        = string
+  default     = "Europe/Madrid"
+}
+
+variable "idioma" {
+  description = "Locale del sistema (cloud-init: locale)"
+  type        = string
+  default     = "es_ES.UTF-8"
+}
+
+variable "paquetes" {
+  description = "Paquetes que cloud-init instala en el primer arranque (cloud-init: packages)"
+  type        = list(string)
+  default     = ["qemu-guest-agent"]
+}
+
 variable "red_nat_cidr" {
   description = "Rango de la red NAT con DHCP"
   type        = string

@@ -1,7 +1,19 @@
 #cloud-config
 hostname: ${hostname}
 manage_etc_hosts: true
+timezone: ${zona_horaria}
+# Debian solo genera los locales activos en /etc/locale.gen. bootcmd se ejecuta
+# antes del módulo locale, que de otro modo falla con es_ES.UTF-8.
+bootcmd:
+  - "[ ! -f /etc/locale.gen ] || sed -i 's/^# *${idioma} /${idioma} /' /etc/locale.gen"
+locale: ${idioma}
 ssh_pwauth: false
+packages: ${jsonencode(paquetes)}
+%{ if contains(paquetes, "qemu-guest-agent") ~}
+# En Debian el servicio no arranca solo al instalarlo en el primer arranque
+runcmd:
+  - systemctl start qemu-guest-agent
+%{ endif ~}
 users:
   - name: ${usuario}
     sudo: ALL=(ALL) NOPASSWD:ALL
