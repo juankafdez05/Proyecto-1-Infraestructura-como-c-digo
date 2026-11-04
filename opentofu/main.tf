@@ -26,7 +26,7 @@ resource "libvirt_cloudinit_disk" "init" {
   name = "${var.prefijo}-${each.key}-init.iso"
   pool = var.pool
 
-  user_data = templatefile("${path.module}/plantillas/user-data.tftpl", {
+  user_data = templatefile("${path.module}/cloud-init/user-data.tftpl", {
     hostname     = each.key
     usuario      = var.usuario
     clave_ssh    = local.clave_ssh
@@ -35,7 +35,7 @@ resource "libvirt_cloudinit_disk" "init" {
     paquetes     = var.paquetes
   })
 
-  network_config = templatefile("${path.module}/plantillas/network-config.tftpl", {
+  network_config = templatefile("${path.module}/cloud-init/network-config.tftpl", {
     mac_nat       = each.value.mac_nat
     mac_datos     = each.value.mac_datos
     ip_datos      = each.value.ip_datos

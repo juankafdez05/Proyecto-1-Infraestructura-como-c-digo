@@ -71,7 +71,11 @@ IP NAT de `web` (sale en `tofu output`) con el nombre definido en
 ## Configuración con cloud-init
 
 OpenTofu genera por cada máquina una ISO de cloud-init a partir de sus variables
-y de las plantillas `opentofu/plantillas/user-data.tftpl` y `network-config.tftpl`.
+y de las plantillas de la carpeta `opentofu/cloud-init/`:
+
+- `user-data.tftpl`: hostname, usuario, clave SSH, zona horaria, idioma y paquetes.
+- `network-config.tftpl`: DHCP en la red NAT e IP estática en la red de datos.
+
 cloud-init deja el sistema base listo y Ansible instala después los servicios;
 `site.yaml` espera a que cloud-init termine antes de empezar.
 
@@ -127,5 +131,6 @@ ansible-playbook site.yaml
 
 ## Estructura
 
-- `opentofu/`: redes, discos, cloud-init, máquinas, output e inventario.
+- `opentofu/`: redes, discos, máquinas, output e inventario.
+- `opentofu/cloud-init/`: plantillas de cloud-init (`user-data` y `network-config`).
 - `ansible/`: `site.yaml`, roles `commons`, `bd` y `web`, y `group_vars/`.
