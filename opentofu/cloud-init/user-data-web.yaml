@@ -1,0 +1,22 @@
+#cloud-config
+hostname: web
+manage_etc_hosts: true
+timezone: Europe/Madrid
+# Debian solo genera los locales activos en /etc/locale.gen. bootcmd se ejecuta
+# antes del módulo locale, que de otro modo falla con es_ES.UTF-8.
+bootcmd:
+  - "[ ! -f /etc/locale.gen ] || sed -i 's/^# *es_ES.UTF-8 /es_ES.UTF-8 /' /etc/locale.gen"
+locale: es_ES.UTF-8
+ssh_pwauth: false
+packages:
+  - qemu-guest-agent
+# En Debian el servicio no arranca solo al instalarlo en el primer arranque
+runcmd:
+  - systemctl start qemu-guest-agent
+users:
+  - name: debian
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    lock_passwd: true
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC3Dv8uPjV+mtweMq4TgL+SyTiw4/bvaPqHoHohDk6VwdGDUdHlp6liWRkhrV09C3y+acBpoy2LAX/n49X9fEWNBCX6VZdJWnGD3WZuRfcVYb00VDNTBooboQB2iK36mL3NEBGmBY0yw7oCpyW2j3kutrUHC/SywmeS64GxEsgIeY6o77cCEMxbGjIZ4a54UoQvqS/LlQOWcVn0jYpsqKsW6qlHY2/2TOrJBzma2ESJS7BQsAzlaLf+PQjwQWQlns9VkbO2N13gr3BZAVIwqshT5dJ8Cn6rV5YTZYWYGaRKPLc8gKGN07Z0qXRKAFW3CLtwqd5XsbtYLAxVRPvZvmE8mdq85vL7OgYYehi6Syho3Q/5UAlWldcu0O52dtvXLDWilNWbJyc+mFFADvXjN1d8JNQjDNvSrgSvvv1kLtv0sK1W7XsbNYenFLdnhpVgZKxjHAxLIGNMI2KFV3bgw87hJ8hdSRsAMnwFOig1paPjXRN16CtalCKs8WOksXjvC6l+k0ld0fMz2zS3y3njv9D98UTQnBxq/9G32uAZHvvnQCQzELd6XAmyQxxCFP9XM8jilTZw4OXbLTA00LinUX5xMURQZloA9SOqh2LbsWumT25h9EU+zJMn3ZWA8iX01g/GzHwN5o9v2uRy6tU+NpdOCgpF9qF0bsl+8OuOTi1Muw== root@JuankaPortatil

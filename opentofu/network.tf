@@ -1,7 +1,7 @@
 resource "libvirt_network" "nat" {
-  name      = "${var.prefijo}-red-nat"
+  name      = "p1-red-nat"
   mode      = "nat"
-  addresses = [var.red_nat_cidr]
+  addresses = ["192.168.150.0/24"]
   autostart = true
 
   dhcp {
@@ -14,7 +14,7 @@ resource "libvirt_network" "nat" {
 }
 
 resource "libvirt_network" "datos" {
-  name      = "${var.prefijo}-red-datos"
+  name      = "p1-red-datos"
   mode      = "none"
   autostart = true
 }

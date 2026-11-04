@@ -37,7 +37,7 @@ Repositorio: https://github.com/juankafdez05/Proyecto-1-Infraestructura-como-c-d
 - OpenTofu >= 1.6 y libvirt/QEMU (usuario en el grupo `libvirt`)
 - Imágenes cloud base de Debian 13 y Ubuntu 26.04 en el pool `default`
 - Ansible y la colección `community.mysql`
-- Una clave SSH pública (`~/.ssh/id_rsa.pub` por defecto)
+- Una clave SSH pública, escrita en los ficheros `opentofu/cloud-init/user-data-*.yaml`
 
 ## Despliegue
 
@@ -61,47 +61,40 @@ IP NAT de `web` (sale en `tofu output`) con el nombre definido en
 
 ## Variables
 
-- OpenTofu (`opentofu/variables.tf`): imágenes base (`imagen_base_deb`,
-  `imagen_base_ubu`), memoria (`memoria_mb`), CPUs, rango de la red NAT, clave
-  SSH, zona horaria, idioma, paquetes iniciales y el mapa `maquinas` (añadir o
-  quitar una entrada añade o quita la VM).
+- OpenTofu (`opentofu/variables.tf`): solo el pool y las imágenes base
+  (`imagen_base_deb`, `imagen_base_ubu`). La lista de máquinas está en `main.tf`
+  (`local.maquinas`) y su configuración en `opentofu/cloud-init/`.
 - Ansible (`ansible/group_vars/`): paquetes comunes, nombre de la base de datos,
   usuario y contraseña, nombre del virtual host y repositorio de la aplicación.
 
 ## Configuración con cloud-init
 
-OpenTofu genera por cada máquina una ISO de cloud-init a partir de sus variables
-y de las plantillas de la carpeta `opentofu/cloud-init/`:
+Cada máquina tiene dos ficheros en `opentofu/cloud-init/`, que OpenTofu graba en
+su ISO de cloud-init:
 
-- `user-data.tftpl`: hostname, usuario, clave SSH, zona horaria, idioma y paquetes.
-- `network-config.tftpl`: DHCP en la red NAT e IP estática en la red de datos.
+- `user-data-<máquina>.yaml`: hostname, usuario, clave SSH, zona horaria, idioma y paquetes.
+- `network-config-<máquina>.yaml`: DHCP en `ens3` (red NAT) e IP estática en `ens4`
+  (red de datos). OpenTofu lee de aquí la IP de datos para generar el inventario.
 
 cloud-init deja el sistema base listo y Ansible instala después los servicios;
 `site.yaml` espera a que cloud-init termine antes de empezar.
 
-| Variable de OpenTofu | Clave de cloud-init | Valor por defecto |
-|---|---|---|
-| clave de `maquinas` | `hostname` | `web`, `bd` |
-| `usuario` | `users[].name` | `debian` |
-| `clave_publica_ssh` | `users[].ssh_authorized_keys` | `~/.ssh/id_rsa.pub` |
-| `zona_horaria` | `timezone` | `Europe/Madrid` |
-| `idioma` | `locale` | `es_ES.UTF-8` |
-| `paquetes` | `packages` | `["qemu-guest-agent"]` |
-| `maquinas[].mac_nat`, `mac_datos` | `ethernets.*.match.macaddress` | ver `variables.tf` |
-| `maquinas[].ip_datos`, `red_datos_prefijo` | `ethernets.datos.addresses` | `10.10.10.11/24`, `10.10.10.12/24` |
+Las tarjetas se identifican por su nombre, así que las MAC no son fijas y la IP de
+la red NAT puede cambiar entre despliegues. La zona horaria, el idioma, el usuario y
+la clave están repetidos en cada `user-data`: si cambian, hay que cambiarlos en todos.
 
-Detalles de la plantilla `user-data.tftpl`:
+Detalles de los ficheros `user-data`:
 
 - `bootcmd` activa el idioma en `/etc/locale.gen` antes del módulo `locale`. En
   Debian es necesario: `locale-gen` solo genera los locales activos en ese
   fichero y, sin este paso, cloud-init termina con error y `site.yaml` se detiene.
-- Si `paquetes` incluye `qemu-guest-agent`, `runcmd` arranca el servicio, porque
-  en Debian no arranca solo al instalarlo durante el primer arranque.
-- `paquetes` es para lo que el sistema necesita antes de Ansible. Los paquetes
+- `runcmd` arranca `qemu-guest-agent`, porque en Debian no arranca solo al
+  instalarlo durante el primer arranque.
+- `packages` es para lo que el sistema necesita antes de Ansible. Los paquetes
   comunes siguen en el rol `commons` (`paquetes_comunes`).
 
 cloud-init solo aplica esta configuración en el primer arranque de cada instancia.
-Para aplicar un cambio de estas variables en un escenario ya creado, reconstrúyelo:
+Para aplicar un cambio de estos ficheros en un escenario ya creado, reconstrúyelo:
 
 ```bash
 cd opentofu
@@ -132,5 +125,5 @@ ansible-playbook site.yaml
 ## Estructura
 
 - `opentofu/`: redes, discos, máquinas, output e inventario.
-- `opentofu/cloud-init/`: plantillas de cloud-init (`user-data` y `network-config`).
+- `opentofu/cloud-init/`: ficheros de cloud-init de cada máquina (`user-data` y `network-config`).
 - `ansible/`: `site.yaml`, roles `commons`, `bd` y `web`, y `group_vars/`.

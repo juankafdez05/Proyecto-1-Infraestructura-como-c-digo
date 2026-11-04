@@ -3,7 +3,7 @@ output "ips" {
   value = {
     for nombre, vm in libvirt_domain.maquina : nombre => {
       nat   = try(vm.network_interface[0].addresses[0], null)
-      datos = var.maquinas[nombre].ip_datos
+      datos = local.ips_datos[nombre]
     }
   }
 }
