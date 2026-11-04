@@ -63,9 +63,49 @@ IP NAT de `web` (sale en `tofu output`) con el nombre definido en
 
 - OpenTofu (`opentofu/variables.tf`): imágenes base (`imagen_base_deb`,
   `imagen_base_ubu`), memoria (`memoria_mb`), CPUs, rango de la red NAT, clave
-  SSH y el mapa `maquinas` (añadir o quitar una entrada añade o quita la VM).
+  SSH, zona horaria, idioma, paquetes iniciales y el mapa `maquinas` (añadir o
+  quitar una entrada añade o quita la VM).
 - Ansible (`ansible/group_vars/`): paquetes comunes, nombre de la base de datos,
   usuario y contraseña, nombre del virtual host y repositorio de la aplicación.
+
+## Configuración con cloud-init
+
+OpenTofu genera por cada máquina una ISO de cloud-init a partir de sus variables
+y de las plantillas `opentofu/plantillas/user-data.tftpl` y `network-config.tftpl`.
+cloud-init deja el sistema base listo y Ansible instala después los servicios;
+`site.yaml` espera a que cloud-init termine antes de empezar.
+
+| Variable de OpenTofu | Clave de cloud-init | Valor por defecto |
+|---|---|---|
+| clave de `maquinas` | `hostname` | `web`, `bd` |
+| `usuario` | `users[].name` | `debian` |
+| `clave_publica_ssh` | `users[].ssh_authorized_keys` | `~/.ssh/id_rsa.pub` |
+| `zona_horaria` | `timezone` | `Europe/Madrid` |
+| `idioma` | `locale` | `es_ES.UTF-8` |
+| `paquetes` | `packages` | `["qemu-guest-agent"]` |
+| `maquinas[].mac_nat`, `mac_datos` | `ethernets.*.match.macaddress` | ver `variables.tf` |
+| `maquinas[].ip_datos`, `red_datos_prefijo` | `ethernets.datos.addresses` | `10.10.10.11/24`, `10.10.10.12/24` |
+
+Detalles de la plantilla `user-data.tftpl`:
+
+- `bootcmd` activa el idioma en `/etc/locale.gen` antes del módulo `locale`. En
+  Debian es necesario: `locale-gen` solo genera los locales activos en ese
+  fichero y, sin este paso, cloud-init termina con error y `site.yaml` se detiene.
+- Si `paquetes` incluye `qemu-guest-agent`, `runcmd` arranca el servicio, porque
+  en Debian no arranca solo al instalarlo durante el primer arranque.
+- `paquetes` es para lo que el sistema necesita antes de Ansible. Los paquetes
+  comunes siguen en el rol `commons` (`paquetes_comunes`).
+
+cloud-init solo aplica esta configuración en el primer arranque de cada instancia.
+Para aplicar un cambio de estas variables en un escenario ya creado, reconstrúyelo:
+
+```bash
+cd opentofu
+tofu destroy
+tofu apply
+cd ../ansible
+ansible-playbook site.yaml
+```
 
 ## Qué hace cada rol
 
@@ -78,6 +118,8 @@ IP NAT de `web` (sale en `tofu output`) con el nombre definido en
 
 ## Comprobaciones
 
+- `cloud-init status` muestra `done` en `web` y `bd`, con la zona horaria y el
+  idioma configurados en OpenTofu.
 - Segunda ejecución de `ansible-playbook site.yaml`: `changed=0`.
 - La base de datos solo acepta conexiones desde `web`.
 - `tofu destroy`, `tofu apply` y `ansible-playbook site.yaml` reconstruyen el
