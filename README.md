@@ -8,28 +8,33 @@ Repositorio: https://github.com/juankafdez05/Proyecto-1-Infraestructura-como-c-d
 ## Escenario
 
 ```
-                 Equipo anfitrión
-                        |
-          p1-red-nat (NAT + DHCP, 192.168.150.0/24)
-              |                         |
-        +-----------+             +-----------+
-        |    web    |             |    bd     |
-        | Debian 13 |             |  Ubuntu   |
-        |           |             |   26.04   |
-        | Apache+PHP|             |  MariaDB  |
-        +-----------+             +-----------+
-              |                         |
-              +--- p1-red-datos (aislada, 10.10.10.0/24) ---+
-         10.10.10.11                10.10.10.12
+                        Equipo anfitrión
+                               |
+         p1-red-nat (NAT + DHCP, 192.168.150.0/24)
+          |                    |                    |
+    +-----------+        +-----------+       +--------------+
+    |    web    |        |    bd     |       |  analizador  |
+    | Debian 13 |        |  Ubuntu   |       |  Debian 13   |
+    |           |        |   26.04   |       |              |
+    | Apache+PHP|        |  MariaDB  |       | Recibe logs  |
+    +-----------+        +-----------+       +--------------+
+          |                    |                    |
+      10.10.10.11          10.10.10.12          10.10.10.13
+          |                    |                    |
+          +---- p1-red-datos (aislada, 10.10.10.0/24) ----+
+
+     web ------ registros (HTTP, puerto 19532) ------> analizador
+     bd  ------ registros (HTTP, puerto 19532) ------> analizador
 ```
 
 | Máquina | SO | Red NAT (DHCP) | Red de datos (estática) |
 |---|---|---|---|
 | web | Debian 13 | 192.168.150.0/24 | 10.10.10.11/24 |
 | bd | Ubuntu 26.04 | 192.168.150.0/24 | 10.10.10.12/24 |
+| analizador | Debian 13 | 192.168.150.0/24 | 10.10.10.13/24 |
 
 - `p1-red-nat`: acceso desde el equipo anfitrión y salida a internet.
-- `p1-red-datos`: red aislada, solo comunica `web` y `bd`.
+- `p1-red-datos`: red aislada que comunica `web`, `bd` y `analizador`.
 - Las máquinas son clones ligeros (qcow2 con imagen base) configurados con cloud-init.
 
 ## Requisitos
@@ -53,7 +58,7 @@ ansible-playbook site.yaml
 ```
 
 `tofu apply` genera `ansible/inventario` con las IP del escenario (grupos
-`servidores_web` y `servidores_bd`), nunca se escribe a mano.
+`servidores_web`, `servidores_bd` y `servidores_analizador`), nunca se escribe a mano.
 
 Para acceder a la aplicación por su nombre, añade al `/etc/hosts` del equipo la
 IP NAT de `web` (sale en `tofu output`) con el nombre definido en
@@ -111,14 +116,36 @@ ansible-playbook site.yaml
   un usuario con permisos `SELECT` e `INSERT` que solo puede conectarse desde la
   IP de `web`, e importa las tablas de forma idempotente.
 - `web`: instala Apache con PHP, activa `rewrite`, crea el virtual host, descarga
-  la aplicación y genera `config.php` desde una plantilla.
+  la aplicación y genera `config.php` desde una plantilla. Los accesos de Apache se
+  guardan en su fichero y también se envían a journald con `systemd-cat`
+  (etiqueta `apache-access`).
+- `journal_remote`: instala el receptor de registros en `analizador`. Recibe por
+  HTTP en el puerto 19532, solo en la red de datos, y guarda los registros en
+  `/var/log/journal/remote/`.
+- `journal_upload`: envía a `analizador` los registros de `web` y `bd`.
+
+## Centralización de registros
+
+Los registros de `web` y `bd` se consultan desde `analizador`:
+
+```bash
+sudo journalctl --directory=/var/log/journal/remote --field=_HOSTNAME
+sudo journalctl --directory=/var/log/journal/remote -t apache-access -n 10
+sudo journalctl --directory=/var/log/journal/remote _HOSTNAME=bd -u mariadb.service
+sudo journalctl --directory=/var/log/journal/remote -o json -n 1
+```
+
+Los registros viajan por HTTP sin cifrar y el receptor no identifica a quién
+envía. Lo aceptamos porque la red de datos está aislada; en producción habría que
+usar HTTPS con certificados.
 
 ## Comprobaciones
 
-- `cloud-init status` muestra `done` en `web` y `bd`, con la zona horaria y el
-  idioma configurados en OpenTofu.
+- `cloud-init status` muestra `done` en `web`, `bd` y `analizador`, con la zona horaria y el
+  idioma configurados en cloud-init.
 - Segunda ejecución de `ansible-playbook site.yaml`: `changed=0`.
 - La base de datos solo acepta conexiones desde `web`.
+- `journalctl --directory=/var/log/journal/remote --field=_HOSTNAME` en `analizador` muestra `web` y `bd`.
 - `tofu destroy`, `tofu apply` y `ansible-playbook site.yaml` reconstruyen el
   escenario completo.
 
@@ -126,4 +153,5 @@ ansible-playbook site.yaml
 
 - `opentofu/`: redes, discos, máquinas, output e inventario.
 - `opentofu/cloud-init/`: ficheros de cloud-init de cada máquina (`user-data` y `network-config`).
-- `ansible/`: `site.yaml`, roles `commons`, `bd` y `web`, y `group_vars/`.
+- `ansible/`: `site.yaml`, roles `commons`, `bd`, `web`, `journal_remote` y
+  `journal_upload`, y `group_vars/`.
