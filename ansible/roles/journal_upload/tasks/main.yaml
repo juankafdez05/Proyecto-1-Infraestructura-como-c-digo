@@ -1,0 +1,44 @@
+---
+- name: Instalar el programa de envío de registros
+  ansible.builtin.apt:
+    name: systemd-journal-remote
+    state: present
+    lock_timeout: 120
+
+- name: Crear los directorios de configuración
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - /etc/systemd/journal-upload.conf.d
+    - /etc/systemd/system/systemd-journal-upload.service.d
+
+- name: Indicar a qué servidor se envían los registros
+  ansible.builtin.template:
+    src: destino.conf.j2
+    dest: /etc/systemd/journal-upload.conf.d/destino.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reiniciar el envío de registros
+
+- name: Hacer que el envío siga reintentando si el analizador no responde
+  ansible.builtin.template:
+    src: reintentos.conf.j2
+    dest: /etc/systemd/system/systemd-journal-upload.service.d/reintentos.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reiniciar el envío de registros
+
+- name: Aplicar ahora los cambios pendientes de configuración
+  ansible.builtin.meta: flush_handlers
+
+- name: Asegurar que el envío está activo y arranca con el sistema
+  ansible.builtin.systemd_service:
+    name: systemd-journal-upload.service
+    state: started
+    enabled: true
