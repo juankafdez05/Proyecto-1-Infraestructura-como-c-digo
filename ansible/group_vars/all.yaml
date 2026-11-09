@@ -10,8 +10,12 @@ paquetes_comunes:
 # IP de cada máquina en la red de datos (las genera OpenTofu en el inventario)
 ip_web_datos: "{{ hostvars['web'].ip_datos }}"
 ip_bd_datos: "{{ hostvars['bd'].ip_datos }}"
+ip_analizador_datos: "{{ hostvars['analizador'].ip_datos }}"
 
 # Base de datos de la aplicación
 bd_nombre: guestbook
 bd_usuario: guestbook
 bd_password: "CambiaEstaClave_2026"
+
+# Puerto en el que el analizador recibe los registros
+journal_puerto: 19532

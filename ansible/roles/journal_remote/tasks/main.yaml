@@ -1,0 +1,61 @@
+---
+- name: Instalar el receptor de registros
+  ansible.builtin.apt:
+    name: systemd-journal-remote
+    state: present
+    lock_timeout: 120
+
+- name: Crear los directorios de configuración
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - /etc/systemd/system/systemd-journal-remote.service.d
+    - /etc/systemd/system/systemd-journal-remote.socket.d
+    - /etc/systemd/journal-remote.conf.d
+
+- name: Hacer que el receptor use HTTP en lugar de HTTPS
+  ansible.builtin.template:
+    src: servicio-http.conf.j2
+    dest: /etc/systemd/system/systemd-journal-remote.service.d/http.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reiniciar el receptor de registros
+
+- name: Hacer que el receptor escuche solo en la red de datos
+  ansible.builtin.template:
+    src: socket-red-datos.conf.j2
+    dest: /etc/systemd/system/systemd-journal-remote.socket.d/red-datos.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reiniciar el receptor de registros
+
+- name: Configurar cómo se guardan los registros recibidos
+  ansible.builtin.template:
+    src: almacenamiento.conf.j2
+    dest: /etc/systemd/journal-remote.conf.d/almacenamiento.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reiniciar el receptor de registros
+
+- name: Aplicar ahora los cambios pendientes de configuración
+  ansible.builtin.meta: flush_handlers
+
+- name: Asegurar que el socket del receptor está activo y arranca con el sistema
+  ansible.builtin.systemd_service:
+    name: systemd-journal-remote.socket
+    state: started
+    enabled: true
+
+- name: Comprobar que el puerto de recepción está escuchando
+  ansible.builtin.wait_for:
+    host: "{{ ip_datos }}"
+    port: "{{ journal_puerto }}"
+    state: started
+    timeout: 30
