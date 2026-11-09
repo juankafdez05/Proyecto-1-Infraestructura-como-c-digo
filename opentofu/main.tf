@@ -2,8 +2,9 @@ locals {
   # Máquinas del escenario y la imagen que clona cada una.
   # El resto de su configuración está en la carpeta cloud-init/
   maquinas = {
-    web = var.imagen_base_deb
-    bd  = var.imagen_base_ubu
+    web        = var.imagen_base_deb
+    bd         = var.imagen_base_ubu
+    analizador = var.imagen_base_deb
   }
 
   # La IP de datos se escribe solo en cloud-init: aquí se lee de cada fichero
