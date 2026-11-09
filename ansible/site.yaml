@@ -28,3 +28,28 @@
   hosts: servidores_web
   roles:
     - web
+
+- name: Servidor central de registros
+  hosts: servidores_analizador
+  roles:
+    - journal_remote
+
+- name: Envío de registros al servidor central
+  hosts: servidores_web:servidores_bd
+  roles:
+    - journal_upload
+
+- name: Comprobar que los registros llegan al analizador
+  hosts: servidores_analizador
+  gather_facts: false
+  tasks:
+    - name: Consultar qué máquinas han enviado registros
+      ansible.builtin.command: journalctl --directory=/var/log/journal/remote --field=_HOSTNAME
+      register: maquinas_registros
+      changed_when: false
+      retries: 12
+      delay: 5
+      until: >-
+        maquinas_registros.rc == 0 and
+        'web' in maquinas_registros.stdout_lines and
+        'bd' in maquinas_registros.stdout_lines
