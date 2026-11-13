@@ -1,0 +1,18 @@
+---
+- name: Crear la base de datos de Matomo
+  community.mysql.mysql_db:
+    name: "{{ matomo_bd_nombre }}"
+    state: present
+    encoding: utf8mb4
+    login_unix_socket: /run/mysqld/mysqld.sock
+
+- name: Crear el usuario de Matomo, que solo puede conectarse desde el analizador
+  community.mysql.mysql_user:
+    name: "{{ matomo_bd_usuario }}"
+    host: "{{ ip_analizador_datos }}"
+    password: "{{ matomo_bd_password }}"
+    priv: "{{ matomo_bd_nombre }}.*:SELECT,INSERT,UPDATE,DELETE,CREATE,DROP,ALTER,INDEX,CREATE TEMPORARY TABLES,LOCK TABLES"
+    column_case_sensitive: true
+    update_password: on_create
+    state: present
+    login_unix_socket: /run/mysqld/mysqld.sock
