@@ -53,3 +53,8 @@
         maquinas_registros.rc == 0 and
         'web' in maquinas_registros.stdout_lines and
         'bd' in maquinas_registros.stdout_lines
+
+- name: Base de datos de Matomo
+  hosts: servidores_bd
+  roles:
+    - matomo_bd
