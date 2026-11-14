@@ -58,3 +58,8 @@
   hosts: servidores_bd
   roles:
     - matomo_bd
+
+- name: Panel de análisis de registros (Matomo)
+  hosts: servidores_analizador
+  roles:
+    - matomo
