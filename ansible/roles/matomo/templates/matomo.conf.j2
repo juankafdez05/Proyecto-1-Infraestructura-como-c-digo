@@ -1,0 +1,13 @@
+<VirtualHost *:80>
+    ServerName {{ matomo_servername }}
+    DocumentRoot {{ matomo_docroot }}
+
+    <Directory {{ matomo_docroot }}>
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/matomo-error.log
+    CustomLog ${APACHE_LOG_DIR}/matomo-access.log combined
+</VirtualHost>
