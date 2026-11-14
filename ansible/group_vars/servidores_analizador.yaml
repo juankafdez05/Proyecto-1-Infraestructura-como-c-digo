@@ -1,0 +1,23 @@
+---
+# Nombre con el que entramos a Matomo desde el navegador
+matomo_servername: logs.juanka.org
+
+# Versión de Matomo que descargamos y su huella SHA-256 (para comprobar la descarga)
+matomo_version: "5.14.2"
+matomo_sha256: "d6ce9e2083f688741ecdccd9f13ca54761fc47592bd8926f1e2d3bcf45daeffb"
+
+# Carpeta de Matomo (el zip oficial se descomprime en /var/www/matomo)
+matomo_docroot: /var/www/matomo
+
+# Usuario administrador del panel de Matomo
+matomo_admin_usuario: admin
+matomo_admin_password: "Asir2026"
+matomo_admin_email: admin@juanka.org
+
+# Sitio que analizamos: el libro de visitas de web
+matomo_sitio_nombre: Libro de visitas
+matomo_sitio_url: "http://{{ hostvars['web'].web_servername }}"
+matomo_zona_horaria: Europe/Madrid
+
+# Cada cuánto importamos los registros nuevos en Matomo (formato OnCalendar de systemd)
+matomo_frecuencia: "*:0/5"
