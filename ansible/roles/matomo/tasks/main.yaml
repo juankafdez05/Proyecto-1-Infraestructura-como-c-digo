@@ -65,3 +65,96 @@
 
 - name: Aplicar ahora los cambios pendientes de Apache
   ansible.builtin.meta: flush_handlers
+
+# --- Instalación de Matomo: rellenamos su asistente web como lo haría una persona ---
+
+- name: Preguntar a Matomo si ya está instalado
+  ansible.builtin.uri:
+    url: http://127.0.0.1/index.php
+    headers:
+      Host: "{{ matomo_servername }}"
+    return_content: true
+  register: matomo_portada
+
+- name: Instalar Matomo con su asistente (solo si aún no está instalado)
+  when: matomo_portada.content is search('<title>[^<]*Installation')
+  block:
+    - name: "Asistente 1/5: datos de la base de datos de bd"
+      ansible.builtin.uri:
+        url: http://127.0.0.1/index.php?module=Installation&action=databaseSetup
+        method: POST
+        headers:
+          Host: "{{ matomo_servername }}"
+        body_format: form-urlencoded
+        body:
+          host: "{{ ip_bd_datos }}"
+          username: "{{ matomo_bd_usuario }}"
+          password: "{{ matomo_bd_password }}"
+          dbname: "{{ matomo_bd_nombre }}"
+          tables_prefix: matomo_
+          adapter: PDO\MYSQL
+          schema: Mariadb
+        follow_redirects: none
+        status_code: 302
+
+    - name: "Asistente 2/5: crear las tablas"
+      ansible.builtin.uri:
+        url: http://127.0.0.1/index.php?module=Installation&action=tablesCreation
+        headers:
+          Host: "{{ matomo_servername }}"
+        return_content: true
+      register: matomo_tablas
+      failed_when: "'Tables created' not in matomo_tablas.content"
+
+    - name: "Asistente 3/5: crear el usuario administrador"
+      ansible.builtin.uri:
+        url: http://127.0.0.1/index.php?module=Installation&action=setupSuperUser
+        method: POST
+        headers:
+          Host: "{{ matomo_servername }}"
+        body_format: form-urlencoded
+        body:
+          login: "{{ matomo_admin_usuario }}"
+          password: "{{ matomo_admin_password }}"
+          password_bis: "{{ matomo_admin_password }}"
+          email: "{{ matomo_admin_email }}"
+        follow_redirects: none
+        status_code: 302
+      no_log: true
+
+    - name: "Asistente 4/5: dar de alta el libro de visitas"
+      ansible.builtin.uri:
+        url: http://127.0.0.1/index.php?module=Installation&action=firstWebsiteSetup
+        method: POST
+        headers:
+          Host: "{{ matomo_servername }}"
+        body_format: form-urlencoded
+        body:
+          siteName: "{{ matomo_sitio_nombre }}"
+          url: "{{ matomo_sitio_url }}"
+          timezone: "{{ matomo_zona_horaria }}"
+          ecommerce: "0"
+        follow_redirects: none
+        status_code: 302
+
+    - name: "Asistente 5/5: terminar la instalación"
+      ansible.builtin.uri:
+        url: http://127.0.0.1/index.php?module=Installation&action=finished
+        method: POST
+        headers:
+          Host: "{{ matomo_servername }}"
+        body_format: form-urlencoded
+        body:
+          submit: "1"
+        follow_redirects: none
+        status_code: 302
+
+- name: Hacer los informes con el temporizador y no al abrir el panel
+  ansible.builtin.lineinfile:
+    path: "{{ matomo_docroot }}/config/config.ini.php"
+    insertafter: '^\[General\]'
+    regexp: "^{{ item.clave }} ="
+    line: "{{ item.clave }} = {{ item.valor }}"
+  loop:
+    - { clave: enable_browser_archiving_triggering, valor: 0 }
+    - { clave: browser_archiving_disabled_enforce, valor: 1 }
