@@ -1,0 +1,16 @@
+[Unit]
+Description=Importar en Matomo los registros de Apache recibidos de web
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+# Grupo dueño de los registros recibidos: sin él, www-data no puede leerlos
+SupplementaryGroups=systemd-journal-remote
+# Crea /var/lib/matomo-importar para guardar por dónde nos quedamos (el cursor)
+StateDirectory=matomo-importar
+# 1. Lee solo las líneas nuevas de Apache y se las pasa a Matomo
+ExecStart=/bin/sh -c 'journalctl --directory=/var/log/journal/remote -t apache-access -o cat --no-pager --cursor-file=/var/lib/matomo-importar/cursor | python3 {{ matomo_docroot }}/misc/log-analytics/import_logs.py --url=http://127.0.0.1 --idsite=1 --log-format-name=ncsa_extended --enable-http-errors --enable-bots -'
+# 2. Prepara los informes con los datos nuevos
+ExecStart=/usr/bin/php {{ matomo_docroot }}/console core:archive --url=http://{{ matomo_servername }}
