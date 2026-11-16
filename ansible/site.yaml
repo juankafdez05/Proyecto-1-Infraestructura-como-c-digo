@@ -63,3 +63,27 @@
   hosts: servidores_analizador
   roles:
     - matomo
+- name: Comprobar que Matomo funciona y guarda sus datos en bd
+  hosts: servidores_analizador
+  gather_facts: false
+  tasks:
+    - name: Comprobar que Matomo responde con su página de entrada
+      ansible.builtin.uri:
+        url: http://127.0.0.1/index.php
+        headers:
+          Host: "{{ matomo_servername }}"
+        return_content: true
+      register: matomo_entrada
+      failed_when: "'Sign in' not in matomo_entrada.content"
+
+    - name: Comprobar que las tablas de Matomo están en bd
+      community.mysql.mysql_query:
+        login_db: "{{ matomo_bd_nombre }}"
+        query: SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = %s
+        positional_args:
+          - "{{ matomo_bd_nombre }}"
+        login_unix_socket: /run/mysqld/mysqld.sock
+      delegate_to: bd
+      register: matomo_tablas_bd
+      changed_when: false
+      failed_when: matomo_tablas_bd.query_result[0][0].n | int == 0
