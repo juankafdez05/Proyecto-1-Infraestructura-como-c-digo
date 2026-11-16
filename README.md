@@ -124,6 +124,12 @@ ansible-playbook site.yaml
   `/var/log/journal/remote/`.
 - `journal_upload`: envía a `analizador` los registros de `web` y `bd`.
 
+- `matomo_bd` (`bd`): crea la base de datos `matomo` y el usuario `matomo`, que solo
+  puede conectarse desde `analizador`, con los permisos que pide Matomo.
+- `matomo` (`analizador`): instala Apache y PHP, descarga Matomo 5.14.2 comprobando su
+  huella, crea el virtual host `logs.juanka.org`, rellena el asistente de instalación y
+  crea el temporizador `matomo-importar` que importa los registros cada 5 minutos.
+
 ## Centralización de registros
 
 Los registros de `web` y `bd` se consultan desde `analizador`:
@@ -148,6 +154,10 @@ usar HTTPS con certificados.
 - `journalctl --directory=/var/log/journal/remote --field=_HOSTNAME` en `analizador` muestra `web` y `bd`.
 - `tofu destroy`, `tofu apply` y `ansible-playbook site.yaml` reconstruyen el
   escenario completo.
+- `http://logs.juanka.org` muestra el inicio de sesión de Matomo y sus tablas están en `bd`.
+- El usuario `matomo` de MariaDB solo puede conectarse desde `analizador`.
+- Las visitas a `www.juanka.org` aparecen en Matomo y no se duplican al repetir la importación.
+
 
 ## Estructura
 
@@ -155,3 +165,31 @@ usar HTTPS con certificados.
 - `opentofu/cloud-init/`: ficheros de cloud-init de cada máquina (`user-data` y `network-config`).
 - `ansible/`: `site.yaml`, roles `commons`, `bd`, `web`, `journal_remote` y
   `journal_upload`, y `group_vars/`.
+
+- `matomo_bd` (`bd`): crea la base de datos `matomo` y el usuario `matomo`, que solo
+  puede conectarse desde `analizador`, con los permisos que pide Matomo.
+- `matomo` (`analizador`): instala Apache y PHP, descarga Matomo 5.14.2 comprobando su
+  huella, crea el virtual host `logs.juanka.org`, rellena el asistente de instalación y
+  crea el temporizador `matomo-importar` que importa los registros cada 5 minutos.
+
+## Análisis de registros con Matomo
+
+Matomo (`http://logs.juanka.org`, en `analizador`) muestra en gráficas los registros
+de acceso de Apache que llegan desde `web`. Guarda sus datos en la base de datos
+`matomo` del MariaDB de `bd`, separada de `guestbook`.
+
+Cada 5 minutos, `matomo-importar.timer` lanza `matomo-importar.service`, que:
+
+1. Lee con `journalctl --cursor-file` solo las líneas nuevas de `apache-access`.
+2. Las importa con `misc/log-analytics/import_logs.py`.
+3. Prepara los informes con `console core:archive`.
+
+Para entrar al panel hay que añadir `logs.juanka.org` con la IP NAT de `analizador`
+en el `/etc/hosts` del equipo. Usuario y contraseña: `matomo_admin_usuario` y
+`matomo_admin_password` de `group_vars/servidores_analizador.yaml`.
+
+```bash
+systemctl list-timers matomo-importar.timer
+sudo systemctl start matomo-importar.service
+sudo journalctl -u matomo-importar.service -n 40
+```
