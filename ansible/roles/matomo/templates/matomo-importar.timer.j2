@@ -1,0 +1,9 @@
+[Unit]
+Description=Importar los registros en Matomo cada pocos minutos
+
+[Timer]
+OnCalendar={{ matomo_frecuencia }}
+Persistent=true
+
+[Install]
+WantedBy=timers.target
