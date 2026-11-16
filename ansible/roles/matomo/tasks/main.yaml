@@ -158,3 +158,32 @@
   loop:
     - { clave: enable_browser_archiving_triggering, valor: 0 }
     - { clave: browser_archiving_disabled_enforce, valor: 1 }
+
+# --- Importación automática de los registros ---
+
+- name: Crear el servicio que importa los registros en Matomo
+  ansible.builtin.template:
+    src: matomo-importar.service.j2
+    dest: /etc/systemd/system/matomo-importar.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recargar systemd
+
+- name: Crear el temporizador que lanza la importación
+  ansible.builtin.template:
+    src: matomo-importar.timer.j2
+    dest: /etc/systemd/system/matomo-importar.timer
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recargar systemd
+
+- name: Aplicar ahora los cambios pendientes de systemd
+  ansible.builtin.meta: flush_handlers
+
+- name: Asegurar que el temporizador está activo y arranca con el sistema
+  ansible.builtin.systemd_service:
+    name: matomo-importar.timer
+    state: started
+    enabled: true
