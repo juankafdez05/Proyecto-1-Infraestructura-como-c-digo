@@ -8,6 +8,15 @@ bootcmd:
   - "[ ! -f /etc/locale.gen ] || sed -i 's/^# *es_ES.UTF-8 /es_ES.UTF-8 /' /etc/locale.gen"
 locale: es_ES.UTF-8
 ssh_pwauth: false
+# Segundo disco (vdb): se formatea en ext4 solo si está vacío
+fs_setup:
+  - label: backups
+    filesystem: ext4
+    device: /dev/vdb
+    partition: none
+# Se monta en /backups al arrancar (nofail: si falta el disco, la máquina arranca igual)
+mounts:
+  - [LABEL=backups, /backups, ext4, "defaults,nofail", "0", "2"]
 packages:
   - qemu-guest-agent
 # En Debian el servicio no arranca solo al instalarlo en el primer arranque

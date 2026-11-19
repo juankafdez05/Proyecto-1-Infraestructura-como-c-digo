@@ -26,6 +26,15 @@ resource "libvirt_volume" "disco" {
   format           = "qcow2"
 }
 
+# Disco vacío de 5 GB para las copias de seguridad (solo lo usa analizador)
+resource "libvirt_volume" "backups" {
+  name   = "p1-analizador-backups.qcow2"
+  pool   = var.pool
+  format = "qcow2"
+  size   = 5 * 1024 * 1024 * 1024
+}
+
+
 # ISO de cloud-init de cada VM
 resource "libvirt_cloudinit_disk" "init" {
   for_each = local.maquinas
@@ -58,6 +67,14 @@ resource "libvirt_domain" "maquina" {
 
   disk {
     volume_id = libvirt_volume.disco[each.key].id
+  }
+
+  # Segundo disco (vdb): solo analizador, para las copias de seguridad
+  dynamic "disk" {
+    for_each = each.key == "analizador" ? [libvirt_volume.backups.id] : []
+    content {
+      volume_id = disk.value
+    }
   }
 
   console {
