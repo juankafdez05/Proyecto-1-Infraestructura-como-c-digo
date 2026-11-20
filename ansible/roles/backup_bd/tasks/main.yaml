@@ -1,0 +1,10 @@
+- name: Crear el usuario de las copias, que solo puede leer y solo desde el analizador
+  community.mysql.mysql_user:
+    name: "{{ backup_bd_usuario }}"
+    host: "{{ ip_analizador_datos }}"
+    password: "{{ backup_bd_password }}"
+    priv: "{{ bd_nombre }}.*:SELECT,SHOW VIEW,TRIGGER,LOCK TABLES"
+    column_case_sensitive: true
+    update_password: on_create
+    state: present
+    login_unix_socket: /run/mysqld/mysqld.sock

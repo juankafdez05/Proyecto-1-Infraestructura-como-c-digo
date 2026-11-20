@@ -24,3 +24,7 @@ journal_puerto: 19532
 matomo_bd_nombre: matomo
 matomo_bd_usuario: matomo
 matomo_bd_password: "Asir2026"
+
+# Usuario de MariaDB para las copias de seguridad: está en bd y lo usa analizador
+backup_bd_usuario: copias
+backup_bd_password: "Asir2026"
