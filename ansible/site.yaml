@@ -87,3 +87,13 @@
       register: matomo_tablas_bd
       changed_when: false
       failed_when: matomo_tablas_bd.query_result[0][0].n | int == 0
+
+- name: Usuario de MariaDB para las copias de seguridad
+  hosts: servidores_bd
+  roles:
+    - backup_bd
+
+- name: Copias de seguridad semanales en analizador
+  hosts: servidores_analizador
+  roles:
+    - backup

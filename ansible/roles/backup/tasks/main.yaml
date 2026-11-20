@@ -1,0 +1,21 @@
+- name: Instalar el cliente de MariaDB (trae mariadb-dump)
+  ansible.builtin.apt:
+    name: mariadb-client
+    state: present
+    lock_timeout: 120
+
+- name: Crear la carpeta de configuración de las copias (solo root)
+  ansible.builtin.file:
+    path: /etc/copia-seguridad
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Guardar los datos de conexión a MariaDB (solo los puede leer root)
+  ansible.builtin.template:
+    src: mariadb.cnf.j2
+    dest: /etc/copia-seguridad/mariadb.cnf
+    owner: root
+    group: root
+    mode: "0600"
