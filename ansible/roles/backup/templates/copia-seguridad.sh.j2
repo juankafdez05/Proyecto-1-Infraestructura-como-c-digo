@@ -1,0 +1,26 @@
+#!/bin/bash
+# Copia de seguridad de los registros recibidos y de la base de datos del libro de visitas
+set -euo pipefail
+# Las copias solo las puede leer root
+umask 077
+
+FECHA=$(date +%F_%H%M%S)
+DESTINO={{ backup_dir }}
+CURSOR=/var/lib/copia-seguridad/cursor
+
+echo "Empieza la copia $FECHA"
+
+# 1. Registros: solo los que han llegado desde la copia anterior (el cursor lo recuerda)
+journalctl --directory=/var/log/journal/remote --cursor-file="$CURSOR" -o export --no-pager \
+  | gzip > "$DESTINO/registros/registros-$FECHA.export.gz"
+
+# 2. MariaDB: la base de datos completa del libro de visitas, desde bd por la red de datos
+mariadb-dump --defaults-extra-file=/etc/copia-seguridad/mariadb.cnf \
+  --single-transaction --databases {{ bd_nombre }} \
+  | gzip > "$DESTINO/mariadb/{{ bd_nombre }}-$FECHA.sql.gz"
+
+# 3. Borrar las copias de más de {{ backup_dias }} días
+find "$DESTINO/registros" "$DESTINO/mariadb" -type f -name '*.gz' -mtime +{{ backup_dias }} -print -delete
+
+echo "Copia terminada:"
+ls -lh "$DESTINO/registros/registros-$FECHA.export.gz" "$DESTINO/mariadb/{{ bd_nombre }}-$FECHA.sql.gz"

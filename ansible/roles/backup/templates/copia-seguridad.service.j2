@@ -1,0 +1,12 @@
+[Unit]
+Description=Copia de seguridad de los registros y de la base de datos
+Wants=network-online.target
+After=network-online.target
+# No se ejecuta si el disco de copias no está montado
+RequiresMountsFor={{ backup_dir }}
+
+[Service]
+Type=oneshot
+# Crea /var/lib/copia-seguridad para guardar el cursor
+StateDirectory=copia-seguridad
+ExecStart=/usr/local/bin/copia-seguridad.sh

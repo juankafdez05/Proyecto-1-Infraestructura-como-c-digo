@@ -19,3 +19,31 @@
     owner: root
     group: root
     mode: "0600"
+
+- name: Crear las carpetas de las copias dentro del disco
+  ansible.builtin.file:
+    path: "{{ backup_dir }}/{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+  loop:
+    - registros
+    - mariadb
+
+- name: Copiar el script que hace la copia
+  ansible.builtin.template:
+    src: copia-seguridad.sh.j2
+    dest: /usr/local/bin/copia-seguridad.sh
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Crear el servicio que lanza la copia
+  ansible.builtin.template:
+    src: copia-seguridad.service.j2
+    dest: /etc/systemd/system/copia-seguridad.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recargar systemd

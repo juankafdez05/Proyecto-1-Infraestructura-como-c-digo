@@ -21,3 +21,12 @@ matomo_zona_horaria: Europe/Madrid
 
 # Cada cuánto importamos los registros nuevos en Matomo (formato OnCalendar de systemd)
 matomo_frecuencia: "*:0/5"
+
+# Carpeta donde está montado el disco de copias (lo monta cloud-init)
+backup_dir: /backups
+
+# Cuándo se hace la copia (formato OnCalendar de systemd): domingos a las 00:00
+backup_cuando: "Sun *-*-* 00:00:00"
+
+# Días que guardamos cada copia antes de borrarla (4 semanas)
+backup_dias: 28
