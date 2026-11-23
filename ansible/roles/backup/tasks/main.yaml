@@ -47,3 +47,22 @@
     group: root
     mode: "0644"
   notify: Recargar systemd
+
+
+- name: Crear el temporizador que lanza la copia cada semana
+  ansible.builtin.template:
+    src: copia-seguridad.timer.j2
+    dest: /etc/systemd/system/copia-seguridad.timer
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recargar systemd
+
+- name: Aplicar ahora los cambios pendientes de systemd
+  ansible.builtin.meta: flush_handlers
+
+- name: Asegurar que el temporizador está activo y arranca con el sistema
+  ansible.builtin.systemd_service:
+    name: copia-seguridad.timer
+    state: started
+    enabled: true

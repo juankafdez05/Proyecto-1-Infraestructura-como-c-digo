@@ -1,0 +1,10 @@
+[Unit]
+Description=Lanzar la copia de seguridad cada semana
+
+[Timer]
+OnCalendar={{ backup_cuando }}
+# Si el equipo estaba apagado a esa hora, la copia se hace al encenderlo
+Persistent=true
+
+[Install]
+WantedBy=timers.target
