@@ -130,6 +130,12 @@ ansible-playbook site.yaml
   huella, crea el virtual host `logs.juanka.org`, rellena el asistente de instalación y
   crea el temporizador `matomo-importar` que importa los registros cada 5 minutos.
 
+- `backup_bd` (`bd`): crea el usuario `copias` de MariaDB, que solo puede leer
+  `guestbook` y solo desde `analizador`.
+- `backup` (`analizador`): instala el cliente de MariaDB, el script de copia y el
+  servicio y el temporizador `copia-seguridad`, que guarda cada domingo a las 00:00
+  los registros nuevos y la base de datos en el disco `/backups`.
+
 ## Centralización de registros
 
 Los registros de `web` y `bd` se consultan desde `analizador`:
@@ -157,6 +163,9 @@ usar HTTPS con certificados.
 - `http://logs.juanka.org` muestra el inicio de sesión de Matomo y sus tablas están en `bd`.
 - El usuario `matomo` de MariaDB solo puede conectarse desde `analizador`.
 - Las visitas a `www.juanka.org` aparecen en Matomo y no se duplican al repetir la importación.
+- `findmnt /backups` en `analizador` muestra el segundo disco (`vdb`) montado.
+- `systemctl list-timers copia-seguridad.timer` muestra la próxima copia el domingo a las 00:00.
+- Dos copias seguidas no repiten registros (cursor) y la copia de MariaDB se restaura.
 
 
 ## Estructura
@@ -193,3 +202,43 @@ systemctl list-timers matomo-importar.timer
 sudo systemctl start matomo-importar.service
 sudo journalctl -u matomo-importar.service -n 40
 ```
+
+## Copias de seguridad semanales
+
+`analizador` tiene un segundo disco de 5 GB (`p1-analizador-backups.qcow2`), creado
+por OpenTofu y formateado y montado en `/backups` por cloud-init.
+
+Cada domingo a las 00:00, `copia-seguridad.timer` lanza `copia-seguridad.service`, que:
+
+1. Guarda con `journalctl --cursor-file -o export` los registros recibidos desde la
+   copia anterior en `/backups/registros/`.
+2. Guarda con `mariadb-dump` la base de datos `guestbook` de `bd` en `/backups/mariadb/`,
+   con el usuario `copias` (solo lectura y solo desde `analizador`).
+3. Borra las copias de más de 28 días.
+
+La hora y los días se cambian en `group_vars/servidores_analizador.yaml`
+(`backup_cuando` y `backup_dias`).
+
+```bash
+systemctl list-timers copia-seguridad.timer
+sudo systemctl start copia-seguridad.service
+sudo journalctl -u copia-seguridad.service -n 20
+sudo ls -lh /backups/registros /backups/mariadb
+```
+
+Restaurar los registros (en `analizador`):
+
+```bash
+sudo sh -c 'zcat $(ls -t /backups/registros/*.export.gz | head -1) | /usr/lib/systemd/systemd-journal-remote --split-mode=none -o /tmp/restaurado.journal -'
+sudo journalctl --file=/tmp/restaurado.journal
+```
+
+Restaurar la base de datos (desde el equipo):
+
+```bash
+ssh debian@IP_ANALIZADOR "sudo sh -c 'zcat \$(ls -t /backups/mariadb/*.sql.gz | head -1)'" \
+  | ssh debian@IP_BD "sudo mariadb"
+```
+
+`tofu destroy` también borra el disco de copias: en producción iría en otra máquina o
+fuera del escenario.
