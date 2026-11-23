@@ -97,3 +97,22 @@
   hosts: servidores_analizador
   roles:
     - backup
+
+
+- name: Comprobar las copias de seguridad
+  hosts: servidores_analizador
+  gather_facts: false
+  tasks:
+    - name: Comprobar que el disco de copias está montado
+      ansible.builtin.command: findmnt {{ backup_dir }}
+      changed_when: false
+
+    - name: Comprobar que el temporizador está activo
+      ansible.builtin.command: systemctl is-active copia-seguridad.timer
+      changed_when: false
+
+    - name: Comprobar que analizador puede leer la base de datos con el usuario de copias
+      ansible.builtin.command: >-
+        mariadb --defaults-extra-file=/etc/copia-seguridad/mariadb.cnf
+        -e "SELECT COUNT(*) FROM {{ bd_nombre }}.messages"
+      changed_when: false
